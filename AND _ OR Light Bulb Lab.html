@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AND / OR Light Bulb Lab</title>
+<style>
+:root{
+  --bg:#f3f0e8; --panel:#fffdf7; --ink:#1d2430; --mute:#6a7280; --line:#d9d4c6;
+  --on:#f5b400; --glow:rgba(245,180,0,.55); --off:#c9c5b8; --yes:#1f8a4c; --no:#c2412d; --accent:#2b4fd8;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --panel:#1d222b; --ink:#eceff4; --mute:#97a0ae; --line:#323947;
+    --on:#ffcf3d; --glow:rgba(255,207,61,.5); --off:#3b4250; --yes:#4cc98a; --no:#ff7a66; --accent:#7e9bff;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --panel:#1d222b; --ink:#eceff4; --mute:#97a0ae; --line:#323947;
+  --on:#ffcf3d; --glow:rgba(255,207,61,.5); --off:#3b4250; --yes:#4cc98a; --no:#ff7a66; --accent:#7e9bff;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Trebuchet MS","Segoe UI",system-ui,sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.7rem;margin:.2em 0 .1em;letter-spacing:-.01em}
+h2{font-size:1.2rem;margin:0 0 .2em}
+p.lead{color:var(--mute);margin:0 0 20px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:22px}
+.row{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+.bulbbox{flex:0 0 150px;text-align:center}
+.bulbbox svg{width:130px;height:auto;overflow:visible}
+.bulb-glass{fill:var(--off);transition:fill .2s,filter .2s}
+.on .bulb-glass{fill:var(--on);filter:drop-shadow(0 0 16px var(--glow))}
+.base{fill:var(--mute)}
+.state{font-weight:700;margin-top:4px}
+.controls{flex:1 1 280px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px}
+.seg button{border:0;background:transparent;color:var(--ink);padding:8px 22px;font:inherit;font-weight:700;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.sw{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.tg{display:flex;align-items:center;gap:10px;border:2px solid var(--line);background:transparent;color:var(--ink);
+  border-radius:12px;padding:10px 14px;font:inherit;cursor:pointer;min-width:140px;text-align:left}
+.tg .k{width:34px;height:20px;border-radius:12px;background:var(--off);position:relative;flex:none;transition:background .15s}
+.tg .k::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+.tg[aria-pressed="true"]{border-color:var(--yes)}
+.tg[aria-pressed="true"] .k{background:var(--yes)}
+.tg[aria-pressed="true"] .k::after{transform:translateX(14px)}
+.tg small{display:block;color:var(--mute);font-size:.75rem;line-height:1.2}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.code{font:600 .95rem/1.7 ui-monospace,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;overflow-x:auto;white-space:pre}
+.kw{color:var(--accent)} .t{color:var(--yes)} .f{color:var(--no)}
+.tablewrap{overflow-x:auto;margin-top:12px}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{border-bottom:1px solid var(--line);padding:6px 10px;text-align:center}
+th{color:var(--mute);font-weight:600}
+tr.hit td{background:var(--glow);font-weight:700}
+.steps{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.steps li{display:flex;gap:10px;align-items:center;background:var(--bg);border-radius:8px;padding:6px 10px;font:.9rem ui-monospace,Consolas,monospace;flex-wrap:wrap}
+.badge{margin-left:auto;font-weight:700;padding:1px 10px;border-radius:20px;color:#fff}
+.badge.t{background:var(--yes);color:#fff}.badge.f{background:var(--no);color:#fff}
+.mini{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer;margin-right:6px}
+.tip{color:var(--mute);font-size:.9rem;margin:10px 0 0}
+</style>
+</head>
+<body>
+<main>
+<h1>AND / OR Light Bulb Lab</h1>
+<p class="lead">Flip the switches and watch the bulb. The code and truth table update live.</p>
+
+<section id="s1">
+  <h2>Level 1: Two switches, one bulb</h2>
+  <p class="tip" style="margin-top:0">Pick an operator, then press the switches.</p>
+  <div class="row">
+    <div class="bulbbox" id="b1"></div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Operator">
+        <button id="mAnd" aria-pressed="true">AND</button>
+        <button id="mOr" aria-pressed="false">OR</button>
+      </div>
+      <div class="sw">
+        <button class="tg" id="swA" aria-pressed="false"><span class="k"></span><span>Switch A</span></button>
+        <button class="tg" id="swB" aria-pressed="false"><span class="k"></span><span>Switch B</span></button>
+      </div>
+      <div class="code" id="code1"></div>
+    </div>
+  </div>
+  <div class="tablewrap"><table id="tt"></table></div>
+  <p class="tip" id="rule1"></p>
+</section>
+
+<section id="s2">
+  <h2>Level 2: Smart room (AND + OR + NOT combined)</h2>
+  <p class="tip" style="margin-top:0">The light turns on when someone is in a dark room, or when the manual switch is on. Away mode blocks everything.</p>
+  <div class="row">
+    <div class="bulbbox" id="b2"></div>
+    <div class="controls">
+      <div class="sw" id="sw2"></div>
+      <button class="mini" id="rst">Reset all</button>
+      <button class="mini" id="rnd">Random</button>
+    </div>
+  </div>
+  <div class="code" id="code2" style="margin-top:14px"></div>
+  <ul class="steps" id="steps"></ul>
+</section>
+</main>
+
+<script>
+const bulb = '<svg viewBox="0 0 100 130" aria-hidden="true"><path class="bulb-glass" d="M50 6C27 6 14 22 14 42c0 14 7 22 14 31 4 5 6 9 6 15h32c0-6 2-10 6-15 7-9 14-17 14-31C86 22 73 6 50 6z"/><rect class="base" x="33" y="92" width="34" height="10" rx="3"/><rect class="base" x="36" y="104" width="28" height="9" rx="3"/><path class="base" d="M42 115h16l-3 9H45z"/></svg><div class="state"></div>';
+function setBulb(id,on){
+  const el=document.getElementById(id);
+  el.classList.toggle('on',on);
+  el.querySelector('.state').textContent=on?'ON':'OFF';
+}
+const tf=v=>`<span class="${v?'t':'f'}">${v}</span>`;
+document.getElementById('b1').innerHTML=bulb;
+document.getElementById('b2').innerHTML=bulb;
+
+/* Level 1 */
+let op='and',A=false,B=false;
+const swA=document.getElementById('swA'), swB=document.getElementById('swB');
+const calc=(o,a,b)=>o==='and'?(a&&b):(a||b);
+function render1(){
+  const r=calc(op,A,B);
+  setBulb('b1',r);
+  swA.setAttribute('aria-pressed',A); swB.setAttribute('aria-pressed',B);
+  mAnd.setAttribute('aria-pressed',op==='and'); mOr.setAttribute('aria-pressed',op==='or');
+  document.getElementById('code1').innerHTML=
+   `<span class="kw">if</span> (A <span class="kw">${op}</span> B):   # ${tf(A)} ${op} ${tf(B)} = ${tf(r)}\n    bulb = <span class="kw">ON</span>\n<span class="kw">else</span>:\n    bulb = <span class="kw">OFF</span>`;
+  let h=`<tr><th>A</th><th>${op.toUpperCase()}</th><th>B</th><th>Bulb</th></tr>`;
+  for(const a of [false,true])for(const b of [false,true]){
+    const x=calc(op,a,b);
+    h+=`<tr class="${a===A&&b===B?'hit':''}"><td>${a}</td><td>${op}</td><td>${b}</td><td>${x?'ON':'OFF'}</td></tr>`;
+  }
+  document.getElementById('tt').innerHTML=h;
+  document.getElementById('rule1').textContent = op==='and'
+   ? 'AND: the bulb is ON only when BOTH A and B are true.'
+   : 'OR: the bulb is ON when AT LEAST ONE of A or B is true.';
+}
+swA.onclick=()=>{A=!A;render1()}; swB.onclick=()=>{B=!B;render1()};
+mAnd.onclick=()=>{op='and';render1()}; mOr.onclick=()=>{op='or';render1()};
+render1();
+
+/* Level 2 */
+const inputs=[
+ {k:'motion',t:'Motion detected',d:'someone is in the room'},
+ {k:'dark',t:'It is dark',d:'light sensor is low'},
+ {k:'manual',t:'Manual switch',d:'wall switch pressed'},
+ {k:'away',t:'Away mode',d:'house is locked down'}
+];
+const S={motion:false,dark:false,manual:false,away:false};
+const box=document.getElementById('sw2');
+inputs.forEach(i=>{
+  const b=document.createElement('button');
+  b.className='tg'; b.id='t_'+i.k; b.setAttribute('aria-pressed','false');
+  b.innerHTML=`<span class="k"></span><span>${i.t}<small>${i.d}</small></span>`;
+  b.onclick=()=>{S[i.k]=!S[i.k];render2()};
+  box.appendChild(b);
+});
+function render2(){
+  const s1=S.motion&&S.dark, s2=s1||S.manual, s3=!S.away, r=s2&&s3;
+  inputs.forEach(i=>document.getElementById('t_'+i.k).setAttribute('aria-pressed',S[i.k]));
+  setBulb('b2',r);
+  document.getElementById('code2').innerHTML=
+   `light = ((motion <span class="kw">and</span> dark) <span class="kw">or</span> manual) <span class="kw">and not</span> away\n      = ((${tf(S.motion)} <span class="kw">and</span> ${tf(S.dark)}) <span class="kw">or</span> ${tf(S.manual)}) <span class="kw">and not</span> ${tf(S.away)}\n      = ${tf(r)}`;
+  const row=(txt,v)=>`<li>${txt}<span class="badge ${v?'t':'f'}">${v}</span></li>`;
+  document.getElementById('steps').innerHTML=
+   row('1. motion and dark',s1)+row('2. (step 1) or manual',s2)+row('3. (step 2) and not away',r);
+}
+rst.onclick=()=>{for(const k in S)S[k]=false;render2()};
+rnd.onclick=()=>{for(const k in S)S[k]=Math.random()<.5;render2()};
+render2();
+</script>
+</body>
+</html>
